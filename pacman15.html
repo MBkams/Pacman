@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+	function main (){
+		var can = document.getElementById("dessin");
+		var pen = can.getContext("2d");
+		var fps = 60;
+		var pix = 30;
+		var speed = 2;
+        var direction = 0;
+        var pacman = { x : 12, y : 11, dx : 1 , dy : 0 , f : 0, speed: 1.5 , b:0 };
+		var ghost1 = { x : 7, y : 2, dx : -1 , dy : 0 , f : 0, speed: 3.5};
+		var ghost2 = { x : 18, y : 2, dx : -1 , dy : 0 , f : 0, speed: 3.5};
+		var ghost3 = { x : 7, y : 14, dx : -1 , dy : 0 , f : 0, speed: 3.5};
+		var ghost4 =  {x : 18, y : 14, dx : -1 , dy : 0 , f : 0, speed: 3.5}
+		var sprites = [ pacman, ghost1, ghost2, ghost3, ghost4];
+		var score = 0 ;	
+		var life = 3;
+		/*
+		   Code:
+		   0 = empty
+		   1 = wall
+		   2 = food
+		   3 = big food
+		   4 = ghost
+		 */
+		var maze =[
+			[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+			[1,3,2,2,1,1,1,1,1,1,1,2,2,2,1,1,1,1,1,1,1,2,2,3,1],
+			[1,2,1,2,2,1,2,2,2,2,1,2,1,2,1,2,2,2,2,1,2,2,1,2,1],
+			[1,2,1,1,2,1,2,1,1,2,2,2,1,2,2,2,1,1,2,1,2,1,1,2,1],
+			[1,2,2,2,2,1,2,1,1,2,1,1,1,1,1,2,1,1,2,1,2,2,2,2,1],
+			[1,1,1,1,2,1,2,1,2,2,2,2,2,2,2,2,2,1,2,1,2,1,1,1,1],
+			[1,1,1,1,2,2,2,1,2,1,1,1,1,1,1,1,2,1,2,2,2,1,1,1,1],
+			[1,1,1,1,2,1,2,1,2,1,0,0,0,0,0,1,2,1,2,1,2,1,1,1,1],
+			[1,2,2,2,2,1,2,1,2,1,0,0,0,0,0,1,2,1,2,1,2,2,2,2,1],
+			[1,1,1,1,2,1,2,1,2,1,0,0,0,0,0,1,2,1,2,1,2,1,1,1,1],
+			[1,1,1,1,2,2,2,1,2,1,1,1,0,1,1,1,2,1,2,2,2,1,1,1,1],
+			[1,1,1,1,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,2,1,1,1,1],
+			[1,2,2,2,2,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,2,2,2,2,1],
+			[1,2,1,1,2,1,2,1,1,1,2,2,2,2,2,1,1,1,2,1,2,1,1,2,1],
+			[1,2,1,1,2,1,2,2,2,2,2,1,1,1,2,2,2,2,2,1,2,1,1,2,1],
+			[1,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,3,1],
+			[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+			];
+
+		setInterval(draw,1000 / fps);
+		document.body.onkeydown = move;
+		function draw_map(){
+			for(var i=0 ;i < maze.length ; i++ ){
+				for(var j=0 ;j< maze[i].length ;j++){
+
+					var s = maze[i][j];
+
+					if(s==0){
+						pen.beginPath();
+						pen.closePath();
+						}
+					if(s == 1){
+						pen.beginPath();
+						pen.rect(j*pix,i*pix,pix,pix);
+						pen.strokeStyle="blue";
+						pen.stroke();
+						pen.fillStyle = "black";
+						pen.fill();
+					}
+					if (s == 2) {
+						pen.beginPath();
+						pen.arc((j * pix + pix )-(pix/2), (i * pix + pix/ 1)-(pix/2), pix / 8, 0 * Math.PI, 2 * Math.PI);
+						pen.fillStyle = "white";
+						pen.fill();						
+					}
+					if (s == 3) {
+						pen.beginPath();
+						pen.arc((j * pix + pix / 1)-(pix/2), (i * pix + pix/ 1)-(pix/2), pix / 4, 0 * Math.PI, 2 * Math.PI);
+						pen.fillStyle = "white";
+						pen.fill();
+					}
+				}	
+			}
+		}
+		function draw () {
+       		pen.clearRect(0,0,can.width,can.height);
+       		draw_map();
+       		draw_sprites();
+       		test_collision();
+       		pen.fillStyle = "white";
+       		pen.fillText(" LIFE : " + life ,15*pix,pix/2);
+			pen.fillText(" SCORE : " + score ,pix,pix/2);
+			pen.closePath();
+       		pacman.f = pacman.f + pacman.speed / fps ;
+       		if (pacman.f>1){
+       			pacman.x = pacman.x + pacman.dx;
+       			pacman.y = pacman.y + pacman.dy;
+       			pacman.f = pacman.f - 1;	
+       			if(direction == 1){ 
+       				pacman.dx = 1 ;
+       				pacman.dy = 0 ;
+       			    pacman.b = 0;
+       			}
+       			if(direction == 2){
+       				pacman.dx = -1 ;
+       				pacman.dy = 0 ;
+       				pacman.b = Math.PI ;        			
+       			}
+       			if(direction == 3){
+       				pacman.dx = 0 ;
+       				pacman.dy = 1 ;
+       				pacman.b = Math.PI/2;
+       			}
+       			if(direction == 4){
+       				pacman.dx = 0 ;
+       				pacman.dy = -1;
+       				pacman.b =Math.PI+Math.PI/2;
+       			}
+       			var food = maze[pacman.y][pacman.x];
+       			var x2 =pacman.x + pacman.dx ;
+       			var y2 =pacman.y + pacman.dy ;
+       			if(maze[y2][x2] == 1 ){
+       				pacman.dx = 0 ;
+       				pacman.dy = 0 ;
+       			}
+       			if(maze[pacman.y][pacman.x] == 2){
+       				maze[pacman.y][pacman.x] = 0 ; 
+       				score = score + 100 ;
+       			} 
+       			if(maze[pacman.y][pacman.x] == 3){
+       				maze[pacman.y][pacman.x] = 0 ; 
+       				score = score + 250 ;
+       			} 
+
+       		}
+		    
+       	}
+       	function draw_sprites() {
+       		for(var i=0; i < sprites.length; i++) {
+				var sprite = sprites[i];
+   				sprite.f = sprite.f + sprite.speed / fps ;
+   				if (sprite.f>1){
+   					sprite.x = sprite.x + sprite.dx;
+   					sprite.y = sprite.y + sprite.dy;
+   					sprite.f = sprite.f - 1;
+	   				if (i == 0) {
+	   					direction_pacman(sprite);	
+	       			} else{
+	       				direction_ghost(sprite);
+	       			}
+	   				var x2 =sprite.x + sprite.dx ;
+	   				var y2 =sprite.y + sprite.dy ;
+	   				if(maze[y2][x2] == 1 ){
+	   					sprite.dx = 0 ;
+	   					sprite.dy = 0 ;
+	   				}
+       			}	
+       			if(i==0){
+	       			var x = (pacman.x + 0.5 + pacman.f*pacman.dx)*pix ;
+		       		var y = (pacman.y + 0.5 + pacman.f*pacman.dy)*pix ;
+		       		var p = Math.PI ;
+		            var open = p/6 * (1.1 + Math.cos(pacman.f * 2 * p))/2 ; 
+		       		pen.beginPath();
+		       	   /* if(x == (23*pix + pix*0.5)){
+		       	    	x = (1*pix + pix*0.5);
+		       	    }
+		       	    else if(x == (1*pix + pix*0.5)){
+		       	    	x = (23*pix + pix*0.5);
+		       	    }*/
+			       	pen.moveTo( x, y );
+			       	pen.arc( x, y , pix / 2.5, pacman.b + open , pacman.b - open);
+					pen.fillStyle = "yellow";					
+				    pen.fill();
+       			}else{
+					var x = (sprite.x + 0.5 + sprite.f*sprite.dx)*pix ;
+					var y = (sprite.y+ 0.5 + sprite.f* sprite.dy)*pix ;
+					pen.beginPath();
+       				pen.arc( x, y, pix * 0.4, 1 * Math.PI, 2 * Math.PI);
+       				pen.lineTo(x+0.4*pix,y+0.4*pix);
+       				pen.lineTo(x+0.2*pix,y+0.2*pix);
+       				pen.lineTo(x,y+0.4*pix);
+       				pen.lineTo(x-0.2*pix,y+0.2*pix);
+       				pen.lineTo(x-0.4*pix,y+0.4*pix);
+					pen.fillStyle = "red";
+					pen.fill();	
+				}
+       		}
+       	}
+       	function test_collision()
+       	{
+       		var collision = 0;
+       		for(i=1;i<5;i++){
+       			if((pacman.x == sprites[i].x) & (pacman.y == sprites[i].y)){
+       				collision = collision +1;//si la position du pacman est egale a celle dun fantom c detecté
+       				alert("collision")
+       			}      			
+       		}
+       	}
+       	function direction_pacman(sprite){
+       		if(direction == 1){
+				sprite.dx = 1 ;
+				sprite.dy = 0 ;
+			}
+			if(direction == 2){
+				sprite.dx = -1 ;
+				sprite.dy = 0 ;       			
+			}
+			if(direction == 3){
+				sprite.dx = 0 ;
+				sprite.dy = 1 ;
+			}
+			if(direction == 4){ 
+				sprite.dx = 0 ;
+				sprite.dy = -1;
+			}
+       	}
+
+       	function direction_ghost(sprite){
+       		var direction =Math.floor( Math.random()*5 ); 
+       		
+       		if(direction == 1){
+				sprite.dx = 1 ;
+				sprite.dy = 0 ;
+			}
+			if(direction == 2){
+				sprite.dx = -1 ;
+				sprite.dy = 0 ;       			
+			}
+			if(direction == 3){
+				sprite.dx = 0 ;
+				sprite.dy = 1 ;
+			}
+			if(direction == 4){
+				sprite.dx = 0 ;
+				sprite.dy = -1;
+			}
+
+       	}
+
+     	function move(ev){
+
+     		if (ev.key == "ArrowRight"){ 
+				direction = 1;
+			}
+			if (ev.key == "ArrowLeft"){
+				direction = 2;
+			}
+			if (ev.key == "ArrowDown"){
+				direction = 3;
+			}
+			if (ev.key == "ArrowUp"){ 
+				direction = 4;
+			}
+		}		        
+	}
+</script>
+</head>
+<body onload="main()">
+	<canvas id="dessin" width="750" height="510" style="background: black"></canvas> 
+</body>
+</html>
